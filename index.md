@@ -1,6 +1,9 @@
-# Musterlösungen · Docker-Grundlagen
+---
+layout: default
+title: "Musterlösungen · Docker-Grundlagen"
+---
 
-Dieses Repository hält die **Musterlösungen** zu den Übungen der Schulung
+Hier stehen die **Musterlösungen** zu den Übungen der Schulung
 „Docker-Grundlagen“ der ATVANTAGE Academy. Die Übungen selbst stehen in den
 [Lernenden-Unterlagen](https://atvantage-academy.github.io/training-material-container-technologies/docker-grundlagen/).
 
@@ -8,25 +11,17 @@ Dieses Repository hält die **Musterlösungen** zu den Übungen der Schulung
 liegt im Suchen, nicht im Ergebnis – und im Kurs wird nach dem Weg gefragt, nicht
 nach der Lösung.
 
-## Die Lösungen stehen in den Pull Requests
+## Die Lösungen
 
-Zu jeder Übung gehört ein Pull Request. Er baut auf dem der vorherigen Übung auf,
-und sein Diff zeigt genau das, was **diese eine** Übung hinzufügt.
-
-➜ [Alle Lösungen ansehen](https://github.com/atvantage-academy/code-template-docker-basics/pulls)
-
-Der Verweis auf den passenden Pull Request steht außerdem in jeder
-Übungsbeschreibung.
-
-## Und als lesbare Seiten
-
-Ist github.com im Kundennetz gesperrt, github.io aber nicht, stehen dieselben
-Lösungen hier:
-
-➜ [Musterlösungen als Seiten](https://atvantage-academy.github.io/code-template-docker-basics/)
-
-Diese Seiten baut die Pipeline [`pages.yml`](.github/workflows/pages.yml) aus dem
-letzten Branch der Kette – dort liegen alle Lösungsordner beieinander.
+{% assign loesungen = site.pages | where: "kategorie", "loesung" | sort: "reihenfolge" %}
+<ul class="loesungen">
+{% for loesung in loesungen %}
+  <li>
+    <a href="{{ loesung.url | relative_url }}">{{ loesung.title }}</a>
+    {% if loesung.beschreibung %}<p>{{ loesung.beschreibung }}</p>{% endif %}
+  </li>
+{% endfor %}
+</ul>
 
 ## Was hier nicht liegt
 

@@ -1,0 +1,81 @@
+# Veröffentlicht die Musterlösungen als GitHub Pages.
+#
+# Hintergrund: Bei manchen Kunden ist github.com gesperrt, github.io aber nicht.
+# Die Lösungen müssen deshalb auch ohne Zugriff auf Pull Requests lesbar sein.
+#
+# Gebaut wird aus EINEM Branch – der Spitze der Lösungskette. Weil jeder
+# Lösungsbranch auf dem der vorigen Übung aufbaut, enthält der letzte alle
+# Ordner. Der Rahmen (Layout, Startseite, dieses Skript) liegt auf main.
+
+name: Musterlösungen veröffentlichen
+
+on:
+  push:
+    branches:
+      - main
+      - "loesung/**"
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Abweichender Lösungsbranch (leer = der konfigurierte)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Eine Veröffentlichung zur Zeit, und laufende nicht abbrechen.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # Die Spitze der Branch-Kette. Kommt eine Übung dazu, wird dieser Wert
+  # auf deren Branch gesetzt – das ist die einzige Stelle, die das weiß.
+  LOESUNGS_BRANCH: loesung/anwendung-und-datenbank
+
+jobs:
+  bauen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rahmen holen
+        uses: actions/checkout@v4
+        with:
+          # Immer von main – der Auslöser kann auch ein Lösungsbranch sein,
+          # und der kennt weder Layout noch Startseite.
+          ref: main
+
+      - name: Lösungen holen
+        uses: actions/checkout@v4
+        with:
+          # Die ganze Historie: Daraus stammt die Reihenfolge der Module.
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.branch || env.LOESUNGS_BRANCH }}
+          path: .loesungen
+
+      - name: Seiten aus den Lösungsordnern erzeugen
+        run: |
+          python3 .github/seiten-erzeugen.py .loesungen . \
+            "${{ github.event.inputs.branch || env.LOESUNGS_BRANCH }}"
+
+      - name: Pages vorbereiten
+        uses: actions/configure-pages@v5
+
+      - name: Jekyll bauen
+        uses: actions/jekyll-build-pages@v1
+
+      - name: Ergebnis hochladen
+        uses: actions/upload-pages-artifact@v3
+
+  veroeffentlichen:
+    needs: bauen
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.veroeffentlichung.outputs.page_url }}
+    steps:
+      - name: Auf GitHub Pages ausliefern
+        id: veroeffentlichung
+        uses: actions/deploy-pages@v4
