@@ -1,0 +1,35 @@
+services:
+
+  datenbank:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: kurs
+      POSTGRES_DB: helloworld
+      # Das Passwort kommt als Datei herein, nicht als Wert.
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-passwort
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - helloworld-data:/var/lib/postgresql/data
+      # Läuft beim ERSTEN Start, wie in "Eine Datenbank konfigurieren".
+      - ./schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro
+    secrets:
+      - db-passwort
+
+  webapp:
+    image: meine-webapp:1.0.0
+    environment:
+      DB_HOST: datenbank
+      DB_NAME: helloworld
+      DB_USER: kurs
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - datenbank
+
+volumes:
+  helloworld-data:
+
+secrets:
+  db-passwort:
+    environment: DB_PASSWORD
