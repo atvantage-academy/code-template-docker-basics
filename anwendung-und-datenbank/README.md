@@ -6,9 +6,8 @@ Zwei Container in einem eigenen Netzwerk: Die Anwendung findet ihre Datenbank
 Zur Übung:
 [Die Webanwendung spricht mit der Datenbank](https://atvantage-academy.github.io/training-material-container-technologies/docker-grundlagen/anwendung-und-datenbank/issue.html)
 
-`app.py` und `requirements.txt` liegen hier zum Kopieren. Es ist eine **neue**
-Anwendung – wer die aus `anwendungen-im-container/` behalten will, legt diese
-daneben.
+Es ist eine **neue** Anwendung – wer die aus `anwendungen-im-container/` behalten
+will, legt diese daneben.
 
 ## Die Befehle in der Reihenfolge
 
@@ -119,3 +118,49 @@ die Datenbank gerade erst startet.
    Anwendung soll einen fehlenden Dienst überstehen und es erneut versuchen,
    statt sich zu beenden – auf einer Plattform ist ein kurz nicht erreichbarer
    Dienst der Normalfall, nicht die Ausnahme.
+
+## Die Dateien dazu
+
+### [`app.py`](app.py)
+
+```python
+import os
+from flask import Flask
+import psycopg2
+
+app = Flask(__name__)
+
+# Konfiguration aus der Umgebung – die Werte dahinter gelten nur,
+# solange nichts gesetzt ist.
+DB_NAME = os.getenv("DB_NAME", "helloworld")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+
+@app.get("/")
+def start():
+    connection = psycopg2.connect(
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        host=DB_HOST,
+        port=DB_PORT,
+    )
+    cursor = connection.cursor()
+    cursor.execute("SELECT text FROM gruss")
+    rows = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    return "\n".join(row[0] for row in rows) + "\n"
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080)
+```
+
+### [`requirements.txt`](requirements.txt)
+
+```text
+flask==3.0.3
+psycopg2-binary==2.9.13
+```
