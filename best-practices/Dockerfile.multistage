@@ -1,0 +1,19 @@
+# Erste Stufe: bauen. Alles, was hier entsteht, bleibt hier – bis auf das
+# eine Programm, das die zweite Stufe sich holt.
+FROM python:3.12-slim-bookworm AS bau
+WORKDIR /bau
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends binutils \
+ && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt pyinstaller
+COPY app.py .
+RUN pyinstaller --onefile app.py
+
+# Zweite Stufe: laufen lassen. Kein Python, kein pip, kein pyinstaller.
+# WICHTIG: dieselbe Debian-Fassung wie oben (bookworm), sonst passt die
+# C-Bibliothek nicht zum gebauten Programm.
+FROM debian:12-slim
+COPY --from=bau /bau/dist/app /usr/local/bin/app
+EXPOSE 8080
+CMD ["app"]
