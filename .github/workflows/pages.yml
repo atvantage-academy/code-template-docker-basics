@@ -9,11 +9,20 @@
 
 name: Musterlösungen veröffentlichen
 
+# Ein Push auf einen Lösungsbranch löst NICHTS aus: Bei push-Ereignissen nimmt
+# GitHub die Workflow-Dateien des gepushten Branches, und dort liegt diese hier
+# nicht. Deshalb die drei Auslöser unten – und nach einer Änderung an den
+# Lösungen am besten von Hand anstoßen:
+#
+#   gh workflow run pages.yml
 on:
   push:
     branches:
       - main
-      - "loesung/**"
+  schedule:
+    # Einmal täglich, damit die Seiten den Lösungsbranches auch ohne
+    # Zutun folgen. Wer das nicht will, streicht diesen Auslöser.
+    - cron: "0 4 * * *"
   workflow_dispatch:
     inputs:
       branch:
