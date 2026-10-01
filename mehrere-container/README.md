@@ -56,15 +56,12 @@ eingefügten Zeile – wieder da.
 
 ## Das Passwort: Datei statt Wert
 
-Die Datenbank liest es über `POSTGRES_PASSWORD_FILE` aus `/run/secrets/db-passwort`.
-Compose legt diese Datei an; ihren Inhalt bezieht sie aus der Umgebung, also aus
-der `.env`. Damit steht der Wert an **einer** Stelle – nicht in der
-`compose.yaml` und nicht im Repository (die `.env` ist in `.gitignore`).
-
-**Die ehrliche Grenze:** Die Webanwendung bekommt denselben Wert weiterhin als
-Umgebungsvariable, weil `app.py` keine Passwortdatei lesen kann. Das ist der
-Grund, warum Anwendungen diese Fähigkeit mitbringen sollten – benennen, nicht
-vertiefen.
+**Beide** Services lesen es als Datei: die Datenbank über
+`POSTGRES_PASSWORD_FILE`, die Anwendung über `DB_PASSWORD_FILE`. Compose legt die
+Datei an und hängt sie in jeden Service, der sie anfordert; ihren Inhalt bezieht
+sie aus der Umgebung, also aus der `.env`. Damit steht der Wert an **einer**
+Stelle – nicht in der `compose.yaml`, nicht in der Prozessliste und nicht im
+Repository (die `.env` ist in `.gitignore`).
 
 ## Freiwillig: wirklich warten statt nur starten
 
@@ -136,9 +133,12 @@ services:
       DB_HOST: datenbank
       DB_NAME: helloworld
       DB_USER: kurs
-      DB_PASSWORD: ${DB_PASSWORD}
+      # Dieselbe Datei wie bei der Datenbank – der Wert steht an einer Stelle.
+      DB_PASSWORD_FILE: /run/secrets/db-passwort
     ports:
       - "8080:8080"
+    secrets:
+      - db-passwort
     depends_on:
       - datenbank
 

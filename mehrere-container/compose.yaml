@@ -21,9 +21,12 @@ services:
       DB_HOST: datenbank
       DB_NAME: helloworld
       DB_USER: kurs
-      DB_PASSWORD: ${DB_PASSWORD}
+      # Dieselbe Datei wie bei der Datenbank – der Wert steht an einer Stelle.
+      DB_PASSWORD_FILE: /run/secrets/db-passwort
     ports:
       - "8080:8080"
+    secrets:
+      - db-passwort
     depends_on:
       - datenbank
 
