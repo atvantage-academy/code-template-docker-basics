@@ -50,7 +50,22 @@ docker container run --rm \
 
 curl http://localhost:8080
 
-# 4. Die Probe aufs Exempel: Datenbank weg
+# 4. Optional: das Passwort aus einer Datei statt aus einer Variablen
+echo 'geheim' > db-passwort.txt
+
+docker container run --rm \
+  --network helloworld-network \
+  -p 8080:8080 \
+  -v "$(pwd)":/app -w /app \
+  -v "$(pwd)/db-passwort.txt":/run/secrets/db-passwort \
+  -e DB_HOST=meine-db \
+  -e DB_NAME=helloworld \
+  -e DB_USER=kurs \
+  -e DB_PASSWORD_FILE=/run/secrets/db-passwort \
+  python:3.12-slim \
+  sh -c "pip install -r requirements.txt && python app.py"
+
+# 5. Die Probe aufs Exempel: Datenbank weg
 docker container stop meine-db
 curl http://localhost:8080          # scheitert
 docker container start meine-db
@@ -61,6 +76,12 @@ curl http://localhost:8080          # geht wieder
 `curl` gehören deshalb in eine **zweite Shell**. Wer lieber eine einzige Shell
 behält, startet sie mit `-d --name meine-app` und sieht mit
 `docker container logs -f meine-app` zu.
+
+**Das Passwort kann auch aus einer Datei kommen.** Ist `DB_PASSWORD_FILE`
+gesetzt, liest die Anwendung den Pfad statt des Werts – dieselbe Datei, die die
+Datenbank über `POSTGRES_PASSWORD_FILE` liest. Dann steht das Passwort an genau
+einer Stelle und nicht in der Prozessliste. Nachgemessen: Die Anwendung
+antwortet mit beiden Wegen gleich.
 
 `DB_PORT` wird nicht gesetzt – der Vorgabewert 5432 stimmt. `DB_HOST` dagegen
 **muss** gesetzt werden, und Benutzer und Passwort ebenso: Die Vorgaben im
@@ -134,9 +155,16 @@ app = Flask(__name__)
 # solange nichts gesetzt ist.
 DB_NAME = os.getenv("DB_NAME", "helloworld")
 DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
+
+# Das Passwort darf auch aus einer Datei kommen: DB_PASSWORD_FILE nennt den Pfad.
+PASSWORD_FILE = os.getenv("DB_PASSWORD_FILE")
+if PASSWORD_FILE:
+    with open(PASSWORD_FILE) as datei:
+        DB_PASSWORD = datei.read().strip()
+else:
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
 
 @app.get("/")
 def start():
