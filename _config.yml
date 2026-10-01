@@ -1,0 +1,24 @@
+# Rahmen für die GitHub-Pages-Ausgabe der Musterlösungen.
+#
+# Die Inhalte stehen NICHT in diesem Branch, sondern im letzten Branch der
+# Lösungskette. Die Pipeline (.github/workflows/pages.yml) holt ihn, erzeugt aus
+# jedem Lösungsordner eine Seite und baut erst danach.
+
+title: "Musterlösungen · Docker-Grundlagen"
+description: "Die Musterlösungen zu den Übungen der Schulung „Docker-Grundlagen“ der ATVANTAGE Academy."
+lang: de
+
+# Der Pfad, unter dem GitHub Pages dieses Repository ausliefert.
+baseurl: "/code-template-docker-basics"
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+exclude:
+  - README.md
+  - AGENTS.md
+  - .github
+  - Gemfile
+  - Gemfile.lock
