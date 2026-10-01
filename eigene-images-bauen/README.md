@@ -8,6 +8,8 @@ Zu den Übungen:
 [Ein eigenes Image bauen](https://atvantage-academy.github.io/training-material-container-technologies/docker-grundlagen/eigene-images-bauen/issue.html)
 ·
 [Die Webanwendung als eigenes Image](https://atvantage-academy.github.io/training-material-container-technologies/docker-grundlagen/eigene-images-bauen/issue-webapp.html)
+·
+[Ein Image versioniert in eine Registry pushen](https://atvantage-academy.github.io/training-material-container-technologies/docker-grundlagen/eigene-images-bauen/issue-veroeffentlichen.html)
 
 ## Ein eigenes Image bauen
 
@@ -256,3 +258,87 @@ if __name__ == "__main__":
 flask==3.0.3
 psycopg2-binary==2.9.13
 ```
+
+## Ein Image versioniert in eine Registry pushen
+
+Hier gibt es nichts zu kopieren – die Übung besteht aus Befehlen, und die Namen
+darin hängen an Deiner Registry. `<registry>` ist deren Adresse (für Docker Hub
+entfällt sie), `<deine-org>` die Organisation darin.
+
+```bash
+docker login <registry>
+
+# Zwei Namen gleich beim Bauen – das spart den Umweg über docker image tag
+docker image build \
+  -t meine-website:1.0.0 \
+  -t <deine-org>/meine-website:1.0.0 \
+  .
+
+docker image ls          # ein Image, zwei Namen: dieselbe IMAGE ID
+
+docker image push <deine-org>/meine-website:1.0.0
+
+# Der bewegliche Zeiger daneben
+docker image tag meine-website:1.0.0 <deine-org>/meine-website:latest
+docker image push <deine-org>/meine-website:latest
+
+# Zweite Fassung: Seite ändern, neu bauen, pushen – und erst DANN latest nachziehen
+echo '<h1>Meine Seite, dritte Fassung</h1>' > index.html
+docker image build -t <deine-org>/meine-website:1.0.1 .
+docker image push <deine-org>/meine-website:1.0.1
+
+docker image tag <deine-org>/meine-website:1.0.1 <deine-org>/meine-website:latest
+docker image push <deine-org>/meine-website:latest
+
+# Optional: lokal wegräumen und die veröffentlichte Fassung zurückholen
+docker image rm <deine-org>/meine-website:1.0.0 <deine-org>/meine-website:latest
+docker image pull <deine-org>/meine-website:1.0.0
+```
+
+### Was dabei in der Registry passiert
+
+Gegen eine lokale Registry (`registry:2`) nachgemessen. Danach liegen dort drei
+Tags, aber nur **zwei** verschiedene Images:
+
+| Tag | Digest |
+| --- | --- |
+| `1.0.0` | `sha256:57842b2a…` |
+| `1.0.1` | `sha256:6cd4ffa9…` |
+| `latest` | `sha256:6cd4ffa9…` |
+
+`latest` und `1.0.1` sind **dasselbe Image unter zwei Namen** – deshalb ist der
+zweite Push auch so schnell: Es ist nichts zu übertragen, nur ein Name zu setzen.
+Und `1.0.0` liegt unberührt daneben; genau das macht ein Zurückrollen möglich.
+
+### Worauf es in der Nachbesprechung ankommt
+
+1. **Ein Image, mehrere Namen.** `docker image tag` baut nichts, es benennt. Die
+   `IMAGE ID` bleibt dieselbe – am besten vorführen.
+2. **Der Name ist die Adresse.** Registry, Organisation, Repository, Tag. Wer
+   woanders hin will, muss das Image umbenennen, nicht neu bauen.
+3. **Reihenfolge beim Nachziehen:** erst die neue Version veröffentlichen, dann
+   `latest` darauf zeigen lassen. Wer `latest` zuerst verschiebt, hat einen
+   Zeiger auf etwas, das in der Registry noch nicht liegt.
+4. **Der zweite Push ist schnell, weil nichts übertragen wird.** Die Schichten
+   liegen schon dort. Das ist derselbe Mechanismus wie beim Build-Cache – und
+   der Übergang zu Block 7.
+
+### Antworten auf die Reflexionsfragen
+
+1. **Wie kommt `latest` an ein bereits gepushtes Image?** Mit
+   `docker image tag` und einem zweiten Push. **Neu gebaut wird nichts** – der
+   Tag ist ein Name auf einem Image, das es schon gibt.
+2. **Welche Schritte für `1.0.1` samt `latest`?** Ändern, bauen mit `-t …:1.0.1`,
+   pushen, `latest` auf `1.0.1` taggen, `latest` pushen.
+3. **Was passiert, wenn es nur `latest` gibt?** Die Registry hält dann nur den
+   jeweils letzten Stand unter einem Namen, der sich bewegt. Niemand kann sagen,
+   welche Fassung gestern lief, und es gibt nichts, worauf man zurückgehen
+   könnte. Wer gestern gezogen hat, hat etwas anderes bekommen als heute –
+   dieselbe Angabe, ein anderes Ergebnis.
+4. **Warum war der zweite Push schneller?** Weil die Schichten schon in der
+   Registry lagen. Übertragen wurde nur das Manifest; der Rest war ein
+   Namenseintrag.
+5. **`FROM` ohne Tag?** Dann gilt `latest` – und das zeigt in einem halben Jahr
+   woanders hin. Derselbe Build ergibt dann ein anderes Image, ohne dass sich im
+   Dockerfile etwas geändert hat. Ein fester Tag ist die Bedingung dafür, dass
+   ein Build wiederholbar ist.
