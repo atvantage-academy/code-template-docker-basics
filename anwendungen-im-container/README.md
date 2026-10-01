@@ -40,3 +40,11 @@ Namen vergibt und `--rm` weglässt, bekommt beim zweiten Lauf
    es weitergeben will, muss es mitschicken.
 2. **Zwei verschiedene Lösungen zeigen lassen**, nicht die „richtige“. Dass
    mehrere Wege ans Ziel führen, ist Teil der Lektion.
+
+## Die Dateien dazu
+
+### [`hello.py`](hello.py)
+
+```python
+print("Hallo aus dem Container!")
+```
