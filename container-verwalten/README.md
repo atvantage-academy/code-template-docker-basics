@@ -1,7 +1,7 @@
 # Lösung · Container verwalten
 
-Ein fremdes Image holen, einen Container daraus betreiben – und am **zweiten**
-Container sehen, was nicht im Image steckt.
+Drei Container aus demselben Image: einer leer, einer mit einer Seite **darin**,
+einer mit einer Seite, die **auf dem eigenen Rechner** liegt.
 
 Zur Übung:
 [Einen Container aus einem fremden Image betreiben](https://atvantage-academy.github.io/training-material-container-technologies/docker-grundlagen/container-verwalten/issue.html)
@@ -34,33 +34,45 @@ docker container create --name mein-webserver -p 8080:80 nginx:1.27.5
 docker container start mein-webserver
 curl http://localhost:8080
 
-# Eine Datei IM laufenden Container anlegen
-docker container exec mein-webserver bash -c "echo 'Hallo Welt' > /usr/share/nginx/html/hallo.html"
-curl http://localhost:8080/hallo.html
-
-# Stoppen und starten: die Datei ist noch da
-docker container stop mein-webserver
-docker container start mein-webserver
-curl http://localhost:8080/hallo.html
-
-# Der zweite Container aus DEMSELBEN Image: anderer Name, anderer Port außen
+# Der zweite Container: anderer Name, anderer Port außen
 docker container create --name zweiter-webserver -p 8081:80 nginx:1.27.5
 docker container start zweiter-webserver
 docker container ls
 
-curl http://localhost:8080/hallo.html   # 200 – die eigene Seite
-curl http://localhost:8081/hallo.html   # 404 – das Image kennt sie nicht
-curl http://localhost:8081              # 200 – die Startseite von NGINX
+# Die Seite entsteht IM zweiten Container
+docker container exec zweiter-webserver bash -c "echo 'Hallo Welt' > /usr/share/nginx/html/hallo.html"
+
+curl http://localhost:8081/hallo.html   # 200 – die eigene Seite
+curl http://localhost:8080/hallo.html   # 404 – der erste kennt sie nicht
+
+# Stoppen und starten: dieselbe Ausprägung, die Seite ist noch da
+docker container stop zweiter-webserver
+docker container start zweiter-webserver
+curl http://localhost:8081/hallo.html   # 200
+
+# Der dritte Container: die Seite liegt auf dem Rechner und wird hineingereicht
+mkdir website
+echo '<h1>Diese Seite liegt auf meinem Rechner</h1>' > website/index.html
+
+# Unter der Git Bash: MSYS_NO_PATHCONV=1 davorstellen
+docker container create --name dritter-webserver -p 8082:80 \
+  -v "$(pwd)/website":/usr/share/nginx/html nginx:1.27.5
+docker container start dritter-webserver
+curl http://localhost:8082
+
+# Ändern – ohne den Container anzufassen
+echo '<h1>Geändert, ohne Neustart</h1>' > website/index.html
+curl http://localhost:8082                # sofort die neue Fassung
 
 # Aufräumen
-docker container stop mein-webserver zweiter-webserver
-docker container rm mein-webserver zweiter-webserver
+docker container stop mein-webserver zweiter-webserver dritter-webserver
+docker container rm mein-webserver zweiter-webserver dritter-webserver
 ```
 
-## Der letzte Schritt steht absichtlich ohne Befehl in der Übung
+## Der zweite Container steht absichtlich ohne Befehl in der Übung
 
-Zwei Dinge müssen am zweiten Container anders sein, und beide meldet Docker
-deutlich, wenn man sie übersieht:
+Zwei Dinge müssen anders sein, und beide meldet Docker deutlich, wenn man sie
+übersieht:
 
 | Abgeschrieben | Meldung |
 | --- | --- |
@@ -70,33 +82,52 @@ deutlich, wenn man sie übersieht:
 **Innen bleibt 80.** Der Webserver im Container weiß nichts davon, dass er von
 außen unter 8081 zu erreichen ist – die Weitergabe macht der Host.
 
+## Warum das VERZEICHNIS eingehängt wird und nicht die Datei
+
+Nachgemessen, nicht angenommen: Hängt man die einzelne Datei ein
+(`-v "$(pwd)/hallo.html":/usr/share/nginx/html/hallo.html`), liefert NGINX nach
+dem nächsten Speichern **404**. Viele Editoren schreiben beim Speichern eine neue
+Datei und benennen sie um; der Container hält aber die alte fest. Mit dem
+eingehängten **Verzeichnis** wirkt jede Änderung sofort – auch die aus einem
+Editor.
+
 ## Worauf es in der Nachbesprechung ankommt
 
 1. **Ohne `-p` keine Tür nach außen** – und nachträglich nicht zu ändern, weil
    die Weitergabe zur Erzeugung des Containers gehört. Dass der Server trotzdem
    läuft, zeigt der Aufruf von innen.
-2. **Was im Container entsteht, gehört nicht ins Image.** Der zweite Container
-   liefert `hallo.html` nicht aus, obwohl er aus derselben Vorlage kommt. Dafür
-   muss nichts gelöscht werden – der Vergleich genügt.
-3. `docker container run --rm` fasst `create` + `start` (+ `pull`) zusammen und
-   räumt den Container am Ende weg.
+2. **Was im Container entsteht, gehört nicht ins Image.** Der erste Container
+   liefert `hallo.html` nicht aus, obwohl beide aus derselben Vorlage kommen.
+3. **Was hineingereicht wird, liegt draußen** – und bleibt dort, wenn der
+   Container weg ist. Das ist der Vorgriff auf „Konfiguration und Zustand“.
 
 ## Antworten auf die Reflexionsfragen
 
 1. **Woran lag es, dass der erste Container nicht erreichbar war?** Es fehlte die
    Port-Weitergabe. Der Server lauschte im Container auf 80, aber nichts reichte
    eine Anfrage von außen hinein.
-2. **Was ist mit `hallo.html` passiert – und was wäre beim Löschen?** Nach
-   `stop`/`start` ist sie noch da: Es ist derselbe Container. Beim Löschen und
-   Neuerzeugen wäre sie weg, denn der neue Container entsteht aus dem Image – und
-   das kennt die Datei nicht. Genau das zeigt auch der zweite Container.
-3. **`docker container run --rm -it nginx:1.27.5 /bin/sh`?** Erzeugt und startet
+2. **Warum liefert der erste Container `hallo.html` nicht aus?** Weil sie im
+   zweiten entstanden ist. Das Image ist der Bauplan und kennt die Datei nicht;
+   jeder Container bekommt beim Erzeugen seinen eigenen beschreibbaren Bereich.
+   Nach `stop`/`start` ist sie noch da – es ist derselbe Container. Beim Löschen
+   und Neuerzeugen wäre sie weg.
+3. **Wo liegt die Seite des dritten Containers – und wofür ist das gut?** Auf dem
+   eigenen Rechner; der Container sieht das Verzeichnis nur an der Stelle, an die
+   es eingehängt wurde. Docker kennt zwei Formen:
+   - **Bind Mount** – ein Verzeichnis des Hosts, hier benutzt. Gut beim
+     Entwickeln und Testen (ändern, ohne neu zu bauen), zum Hineinreichen von
+     Konfiguration und zum Austausch von Dateien mit dem Host.
+   - **Volume** – ein von Docker verwalteter Ablageort. Gut für Daten, die den
+     Container **überleben** sollen (Datenbanken, Uploads), und für den Austausch
+     zwischen mehreren Containern. Das wird in „Konfiguration und Zustand“ selbst
+     gebaut.
+4. **`docker container run --rm -it nginx:1.27.5 /bin/sh`?** Erzeugt und startet
    in einem Schritt, hängt ein Terminal an (`-it`) und löscht den Container beim
    Verlassen (`--rm`). Nützlich, um schnell in ein Image hineinzusehen, ohne
    etwas zu hinterlassen.
-4. **Bedeutung von `latest`?** Kein Versionsname, sondern ein beweglicher Zeiger:
+5. **Bedeutung von `latest`?** Kein Versionsname, sondern ein beweglicher Zeiger:
    Wer ohne Tag zieht, bekommt ihn – und morgen unter Umständen ein anderes
    Image. Für etwas, das verlässlich laufen soll, gehört ein fester Tag hin.
-5. **Was bedeutet „Aliases“ in der Dokumentation?** Derselbe Befehl unter einem
+6. **Was bedeutet „Aliases“ in der Dokumentation?** Derselbe Befehl unter einem
    kürzeren Namen: `docker pull` ist ein Alias für `docker image pull`. In diesem
    Kurs gilt die Langform – sie nennt, worauf der Befehl wirkt.
