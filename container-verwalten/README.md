@@ -131,6 +131,7 @@ Editor.
 5. **Bedeutung von `latest`?** Kein Versionsname, sondern ein beweglicher Zeiger:
    Wer ohne Tag zieht, bekommt ihn – und morgen unter Umständen ein anderes
    Image. Für etwas, das verlässlich laufen soll, gehört ein fester Tag hin.
-6. **Was bedeutet „Aliases“ in der Dokumentation?** Derselbe Befehl unter einem
-   kürzeren Namen: `docker pull` ist ein Alias für `docker image pull`. In diesem
-   Kurs gilt die Langform – sie nennt, worauf der Befehl wirkt.
+6. **Wie ist der Abschnitt „Aliases“ zu deuten?** Derselbe Befehl ist unter einem
+   kürzeren Namen erreichbar: `docker pull` ist ein Alias für `docker image pull`,
+   beide tun dasselbe. In diesem Kurs gilt die Langform – sie nennt, worauf der
+   Befehl wirkt.
