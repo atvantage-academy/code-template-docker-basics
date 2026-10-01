@@ -58,3 +58,15 @@ bereitstellen und dessen Namen nennen, dann entfällt der `pip install`.
    Anwendung nicht im Image steckt. Das ist der Auftakt zu „Eigene Images bauen“.
 3. `host="0.0.0.0"` ist Pflicht: Eine Anwendung, die nur auf `127.0.0.1` lauscht,
    ist trotz `-p` nicht erreichbar.
+
+## Antworten auf die Reflexionsfragen der Webanwendung
+
+1. **Wann wird Flask installiert, und wie oft?** Beim Start des Containers – also
+   bei **jedem** Lauf, denn mit `--rm` ist der Container danach weg. Die
+   Installation lebt im Container, nicht im Image. Das kostet jedes Mal Zeit und
+   setzt voraus, dass aus dem Container heraus Pakete geladen werden dürfen.
+2. **Warum `0.0.0.0` und nicht `127.0.0.1`?** `127.0.0.1` ist die
+   Loopback-Adresse **im Container**: Dort erreicht die Anwendung nur, wer selbst
+   im Container ist. Von außen kommt nichts an, auch nicht über `-p` – die
+   Weitergabe endet an einer Adresse, auf der niemand lauscht. `0.0.0.0` heißt
+   „auf allen Adressen des Containers“, und erst damit greift die Port-Weitergabe.
