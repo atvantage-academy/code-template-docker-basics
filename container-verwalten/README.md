@@ -135,3 +135,14 @@ Editor.
    kürzeren Namen erreichbar: `docker pull` ist ein Alias für `docker image pull`,
    beide tun dasselbe. In diesem Kurs gilt die Langform – sie nennt, worauf der
    Befehl wirkt.
+
+## Die Dateien dazu
+
+### [`website/index.html`](website/index.html)
+
+Die Seite, die der dritte Container ausliefert – sie liegt auf dem Rechner, nicht
+im Image.
+
+```html
+<h1>Diese Seite liegt auf meinem Rechner</h1>
+```
