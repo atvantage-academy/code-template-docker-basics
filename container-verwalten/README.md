@@ -9,6 +9,10 @@ Zur Übung:
 ## Die Befehle in der Reihenfolge
 
 ```bash
+# GIT BASH UNTER WINDOWS: Jedem Befehl, der ein Verzeichnis einhängt, ein
+# MSYS_NO_PATHCONV=1 voranstellen – sonst baut die Shell den Pfad im Container
+# zu einem Windows-Pfad um:  MSYS_NO_PATHCONV=1 docker container create ...
+
 # Zwei Stände desselben Images holen: einmal ohne Tag, einmal mit
 docker image pull nginx
 docker image pull nginx:1.27.5
@@ -54,7 +58,6 @@ curl http://localhost:8081/hallo.html   # 200
 mkdir website
 echo '<h1>Diese Seite liegt auf meinem Rechner</h1>' > website/index.html
 
-# Unter der Git Bash: MSYS_NO_PATHCONV=1 davorstellen
 docker container create --name dritter-webserver -p 8082:80 \
   -v "$(pwd)/website":/usr/share/nginx/html nginx:1.27.5
 docker container start dritter-webserver
@@ -111,16 +114,16 @@ Editor.
    jeder Container bekommt beim Erzeugen seinen eigenen beschreibbaren Bereich.
    Nach `stop`/`start` ist sie noch da – es ist derselbe Container. Beim Löschen
    und Neuerzeugen wäre sie weg.
-3. **Wo liegt die Seite des dritten Containers – und wofür ist das gut?** Auf dem
-   eigenen Rechner; der Container sieht das Verzeichnis nur an der Stelle, an die
-   es eingehängt wurde. Docker kennt zwei Formen:
-   - **Bind Mount** – ein Verzeichnis des Hosts, hier benutzt. Gut beim
-     Entwickeln und Testen (ändern, ohne neu zu bauen), zum Hineinreichen von
-     Konfiguration und zum Austausch von Dateien mit dem Host.
-   - **Volume** – ein von Docker verwalteter Ablageort. Gut für Daten, die den
-     Container **überleben** sollen (Datenbanken, Uploads), und für den Austausch
-     zwischen mehreren Containern. Das wird in „Konfiguration und Zustand“ selbst
-     gebaut.
+3. **Für welche Anwendungsfälle sind Bind Mounts sinnvoll?** Die Seite liegt auf
+   dem eigenen Rechner; der Container sieht das Verzeichnis nur an der Stelle, an
+   die es eingehängt wurde. Das lohnt sich
+   - beim **Entwickeln und Testen** – ändern und sofort sehen, ohne neu zu bauen,
+   - um **Konfiguration von außen** hineinzureichen,
+   - zum **Austausch von Dateien** zwischen Host und Container,
+   - und für Daten, die den Container **überleben** sollen.
+
+   Für den letzten Fall gibt es die zweite Form, das von Docker verwaltete
+   **Volume** – das wird in „Konfiguration und Zustand“ selbst gebaut.
 4. **`docker container run --rm -it nginx:1.27.5 /bin/sh`?** Erzeugt und startet
    in einem Schritt, hängt ein Terminal an (`-it`) und löscht den Container beim
    Verlassen (`--rm`). Nützlich, um schnell in ein Image hineinzusehen, ohne
