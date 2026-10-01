@@ -8,9 +8,16 @@ app = Flask(__name__)
 # solange nichts gesetzt ist.
 DB_NAME = os.getenv("DB_NAME", "helloworld")
 DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
+
+# Das Passwort darf auch aus einer Datei kommen: DB_PASSWORD_FILE nennt den Pfad.
+PASSWORD_FILE = os.getenv("DB_PASSWORD_FILE")
+if PASSWORD_FILE:
+    with open(PASSWORD_FILE) as datei:
+        DB_PASSWORD = datei.read().strip()
+else:
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
 
 @app.get("/")
 def start():
