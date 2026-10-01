@@ -154,14 +154,18 @@ Nachgemessen: Drei Zeilen aus der Tabelle `gruss`, das Image ist rund 166 MB
 groß. **Das `-v "$(pwd)":/app` von gestern ist weg** – der Code steckt jetzt im
 Artefakt, und der Startbefehl ist eine einzige Zeile.
 
-### Die Reihenfolge im Dockerfile ist kein Zufall
+### Dieses Dockerfile ist absichtlich noch nicht gut
 
-`COPY requirements.txt` und `RUN pip install` stehen **vor** `COPY app.py`.
-Nachgemessen mit `docker image build --progress=plain`: Nach einer Änderung an
-`app.py` meldet der Installationsschritt `CACHED`, bei umgekehrter Reihenfolge
-(`COPY . .` vor `RUN pip install`) läuft er jedes Mal neu. Das ist der Stoff der
-Übung *Die Reihenfolge umbauen und messen* in Block 7 – **hier nicht
-vorwegnehmen**, nur richtig schreiben.
+`COPY . .` steht **vor** `RUN pip install`. Damit liegt der Anwendungscode in
+derselben Schicht wie alles andere, und jede Änderung an `app.py` macht die
+Installation der Abhängigkeiten ungültig. Nachgemessen mit
+`docker image build --progress=plain`: Der Installationsschritt läuft nach jeder
+Änderung erneut.
+
+**Das ist so gewollt.** Die Übung *Das Image optimieren* in Block 7 baut genau
+dieses Dockerfile um – wer hier schon die gute Reihenfolge schreibt, nimmt der
+Messung dort ihren Gegenstand. Wer es von selbst besser macht, hat recht; dann
+gibt es in Block 7 ein anderes Beispiel.
 
 ### Worauf es in der Nachbesprechung ankommt
 
@@ -194,14 +198,8 @@ vorwegnehmen**, nur richtig schreiben.
 ```dockerfile
 FROM python:3.12-slim
 WORKDIR /app
-
-# Erst die Abhängigkeiten, dann der Code: Eine Änderung an app.py soll die
-# Installation nicht erneut auslösen.
-COPY requirements.txt .
+COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
-
-COPY app.py .
-
 EXPOSE 8080
 CMD ["python", "app.py"]
 ```
