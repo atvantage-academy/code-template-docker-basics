@@ -7,8 +7,6 @@ Konfigurationsdatei im Image. Und die Daten so ablegen, dass sie den Container
 Zur Übung:
 [Eine Datenbank konfigurieren](https://atvantage-academy.github.io/training-material-container-technologies/docker-grundlagen/konfiguration-und-zustand/issue.html)
 
-`schema.sql` liegt hier zum Kopieren.
-
 ## Die Befehle in der Reihenfolge
 
 ```bash
@@ -160,3 +158,19 @@ Secrets-Verwaltung der Plattform.
    einzelne Stelle mit eigenen Zugriffsrechten, die auf einer Plattform nicht der
    Mensch einhängt, sondern deren Secrets-Verwaltung. Weg ist das Geheimnis damit
    nicht; es ist nur nicht mehr überall.
+
+## Die Dateien dazu
+
+### [`schema.sql`](schema.sql)
+
+Wird beim **ersten** Start nach `/docker-entrypoint-initdb.d/` eingehängt.
+
+```sql
+CREATE TABLE gruss (
+  id   SERIAL PRIMARY KEY,
+  text TEXT NOT NULL
+);
+
+INSERT INTO gruss (text)
+VALUES ('Hallo Welt'), ('Hello World'), ('Bonjour le monde');
+```
