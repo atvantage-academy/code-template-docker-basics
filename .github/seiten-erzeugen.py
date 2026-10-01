@@ -5,8 +5,12 @@ Aufruf:  seiten-erzeugen.py <quelle> <ziel> [<branchname>]
 
 Die Quelle ist ein Arbeitsverzeichnis des Lösungsbranches, das Ziel die Wurzel
 der Jekyll-Quellen. Jeder Ordner darin, der eine README.md enthält, wird zu
-einer Seite «ordner»/index.md; alle weiteren Dateien des Ordners werden
-danebengelegt, damit relative Verweise auch auf den Pages tragen.
+einer Seite «ordner»/index.md; alle weiteren Dateien des Ordners landen unter
+«ordner»/dateien/, und die Verweise darauf werden mitgezogen.
+
+Der Umweg über dateien/ ist nötig, weil ein Artefakt sonst die Seite überschreibt:
+Eine Lösung mit eigener index.html – und die gibt es, sobald Webseiten im Spiel
+sind – läge sonst genau dort, wo die gebaute Seite liegt.
 
 Bewusst generisch: Es gibt keine Liste der Module. Wer einen Lösungsordner
 hinzufügt, bekommt seine Seite ohne weiteres Zutun. Die Reihenfolge stammt aus
@@ -92,21 +96,28 @@ def main():
             kopf.append(f"beschreibung: {yaml_text(beschreibung)}")
         kopf.append("---")
 
-        with open(os.path.join(zielordner, "index.md"), "w", encoding="utf-8") as datei:
-            datei.write("\n".join(kopf) + "\n\n" + rumpf)
-
-        # Die übrigen Artefakte danebenlegen – sie sind aus der README verlinkt.
-        for wurzel, _, dateien in os.walk(quellordner):
-            for dateiname in dateien:
+        # Die übrigen Artefakte nach dateien/ kopieren und die Verweise
+        # darauf mitziehen.
+        artefakte = []
+        for wurzel, _, dateinamen in os.walk(quellordner):
+            for dateiname in dateinamen:
                 if wurzel == quellordner and dateiname == "README.md":
                     continue
                 voll = os.path.join(wurzel, dateiname)
-                relativ = os.path.relpath(voll, quellordner)
-                zielpfad = os.path.join(zielordner, relativ)
+                relativ = os.path.relpath(voll, quellordner).replace(os.sep, "/")
+                zielpfad = os.path.join(zielordner, "dateien", *relativ.split("/"))
                 os.makedirs(os.path.dirname(zielpfad), exist_ok=True)
                 shutil.copy2(voll, zielpfad)
+                artefakte.append(relativ)
 
-        print(f"{nummer:2d}. {name} – {titel}")
+        # Längste zuerst, damit "website/index.html" vor "index.html" drankommt.
+        for relativ in sorted(artefakte, key=len, reverse=True):
+            rumpf = rumpf.replace(f"]({relativ})", f"](dateien/{relativ})")
+
+        with open(os.path.join(zielordner, "index.md"), "w", encoding="utf-8") as datei:
+            datei.write("\n".join(kopf) + "\n\n" + rumpf)
+
+        print(f"{nummer:2d}. {name} – {titel} ({len(artefakte)} Artefakt(e))")
 
     if branch:
         with open(os.path.join(ziel, "_config.yml"), "a", encoding="utf-8") as datei:
