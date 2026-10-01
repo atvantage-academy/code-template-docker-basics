@@ -9,10 +9,15 @@
 
 name: Musterlösungen veröffentlichen
 
-# Ein Push auf einen Lösungsbranch löst NICHTS aus: Bei push-Ereignissen nimmt
-# GitHub die Workflow-Dateien des gepushten Branches, und dort liegt diese hier
-# nicht. Deshalb die drei Auslöser unten – und nach einer Änderung an den
-# Lösungen am besten von Hand anstoßen:
+# Dieser Workflow liegt NUR auf main – die Lösungsbranches tragen keine
+# Infrastruktur. Welcher von ihnen gebaut wird, sucht er sich selbst: den
+# Branch, auf dem alle anderen aufbauen (.github/spitze-ermitteln.sh). Eine neue
+# Übung braucht hier also keine Änderung.
+#
+# Ein Push auf einen Lösungsbranch löst allerdings NICHTS aus: Bei
+# push-Ereignissen nimmt GitHub die Workflow-Dateien des gepushten Branches, und
+# dort liegt diese hier nicht. Deshalb die drei Auslöser unten – und nach einer
+# Änderung an den Lösungen am besten von Hand anstoßen:
 #
 #   gh workflow run pages.yml
 on:
@@ -40,11 +45,6 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
-env:
-  # Die Spitze der Branch-Kette. Kommt eine Übung dazu, wird dieser Wert
-  # auf deren Branch gesetzt – das ist die einzige Stelle, die das weiß.
-  LOESUNGS_BRANCH: loesung/anwendung-und-datenbank
-
 jobs:
   bauen:
     runs-on: ubuntu-latest
@@ -59,15 +59,31 @@ jobs:
       - name: Lösungen holen
         uses: actions/checkout@v4
         with:
-          # Die ganze Historie: Daraus stammt die Reihenfolge der Module.
+          # Die ganze Historie und alle Branches: Daraus ergeben sich die
+          # Spitze der Kette und die Reihenfolge der Module.
           fetch-depth: 0
-          ref: ${{ github.event.inputs.branch || env.LOESUNGS_BRANCH }}
           path: .loesungen
+
+      - name: Spitze der Lösungskette bestimmen
+        id: kette
+        run: |
+          # Sicherstellen, dass ALLE Lösungsbranches als Referenzen vorliegen –
+          # worauf checkout sie beschränkt, hängt an seiner Fassung.
+          git -C .loesungen fetch --quiet --prune origin \
+            "+refs/heads/loesung/*:refs/remotes/origin/loesung/*"
+
+          branch="${{ github.event.inputs.branch }}"
+          if [ -z "$branch" ]; then
+            branch="$(.github/spitze-ermitteln.sh .loesungen)"
+          fi
+          echo "Gebaut wird aus: $branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          git -C .loesungen checkout --quiet "$branch"
 
       - name: Seiten aus den Lösungsordnern erzeugen
         run: |
           python3 .github/seiten-erzeugen.py .loesungen . \
-            "${{ github.event.inputs.branch || env.LOESUNGS_BRANCH }}"
+            "${{ steps.kette.outputs.branch }}"
 
       - name: Pages vorbereiten
         uses: actions/configure-pages@v5
