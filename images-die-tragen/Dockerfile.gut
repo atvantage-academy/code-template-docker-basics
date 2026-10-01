@@ -1,0 +1,12 @@
+# Erste Stufe: alles, was nur zur Aufbereitung gebraucht wird.
+FROM debian:12-slim AS aufbereitung
+WORKDIR /arbeit
+COPY index.html .
+RUN echo "<p>gebaut in der Aufbereitungsstufe</p>" >> index.html
+
+# Zweite Stufe: ein Image, das für den Betrieb ohne root gebaut ist.
+# Es lauscht deshalb auf 8080, nicht auf 80.
+FROM nginxinc/nginx-unprivileged:1.27-alpine
+COPY --from=aufbereitung /arbeit/index.html /usr/share/nginx/html/index.html
+EXPOSE 8080
+CMD ["nginx", "-g", "daemon off;"]
