@@ -118,5 +118,5 @@ EXPOSE 80
 ### [`index.html`](index.html)
 
 ```html
-<h1>Diese Seite liegt auf meinem Rechner</h1>
+<h1>Meine eigene Seite</h1>
 ```
