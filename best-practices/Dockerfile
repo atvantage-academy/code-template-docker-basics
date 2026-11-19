@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3-slim
 WORKDIR /app
 
 # Zuerst nur die Abhängigkeitsliste: Solange sie sich nicht ändert, bleibt die

@@ -58,10 +58,10 @@ Paketlisten sind nicht mehr darin.
 1. **`pyinstaller` braucht `binutils`.** Ohne das Paket bricht die erste Stufe ab:
    `ERROR: On Linux, objdump is required.`
 2. **Beide Stufen müssen auf derselben Debian-Fassung aufsetzen.** Mit
-   `python:3.12-slim` oben (zeigt inzwischen auf eine neuere Fassung) und
+   `python:3-slim` oben (zeigt inzwischen auf eine neuere Fassung) und
    `debian:12-slim` unten baut das Image zwar, startet aber nicht:
    `Failed to load Python shared library … version 'GLIBC_2.38' not found`.
-   Deshalb steht oben `python:3.12-slim-bookworm`.
+   Deshalb steht oben `python:3-slim-bookworm`.
 
    Das ist kein Python-Sonderfall: Ein Programm erwartet die Bibliotheken, gegen
    die es gebaut wurde.
@@ -96,7 +96,7 @@ Paketlisten sind nicht mehr darin.
 ### [`Dockerfile`](Dockerfile)
 
 ```dockerfile
-FROM python:3.12-slim
+FROM python:3-slim
 WORKDIR /app
 
 # Zuerst nur die Abhängigkeitsliste: Solange sie sich nicht ändert, bleibt die
@@ -115,7 +115,7 @@ CMD ["python", "app.py"]
 ```dockerfile
 # Erste Stufe: bauen. Alles, was hier entsteht, bleibt hier – bis auf das
 # eine Programm, das die zweite Stufe sich holt.
-FROM python:3.12-slim-bookworm AS bau
+FROM python:3-slim-bookworm AS bau
 WORKDIR /bau
 RUN apt-get update \
  && apt-get install -y --no-install-recommends binutils \

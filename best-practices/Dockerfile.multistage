@@ -1,6 +1,6 @@
 # Erste Stufe: bauen. Alles, was hier entsteht, bleibt hier – bis auf das
 # eine Programm, das die zweite Stufe sich holt.
-FROM python:3.12-slim-bookworm AS bau
+FROM python:3-slim-bookworm AS bau
 WORKDIR /bau
 RUN apt-get update \
  && apt-get install -y --no-install-recommends binutils \
