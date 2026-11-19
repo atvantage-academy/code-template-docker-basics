@@ -45,7 +45,7 @@ docker container run --rm \
   -e DB_NAME=helloworld \
   -e DB_USER=kurs \
   -e DB_PASSWORD=geheim \
-  python:3.12-slim \
+  python:3-slim \
   sh -c "pip install -r requirements.txt && python app.py"
 
 curl http://localhost:8080
@@ -62,7 +62,7 @@ docker container run --rm \
   -e DB_NAME=helloworld \
   -e DB_USER=kurs \
   -e DB_PASSWORD_FILE=/run/secrets/db-passwort \
-  python:3.12-slim \
+  python:3-slim \
   sh -c "pip install -r requirements.txt && python app.py"
 
 # 5. Die Probe aufs Exempel: Datenbank weg
