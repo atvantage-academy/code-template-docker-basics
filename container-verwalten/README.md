@@ -68,6 +68,7 @@ curl http://localhost:8082   # die eigene Seite
 # Ändern – ohne den Container anzufassen
 echo '<h1>Geändert, ohne Neustart</h1>' > website/index.html
 curl http://localhost:8082   # sofort die neue Fassung
+curl http://localhost:8081   # weiterhin die alte – sie wurde kopiert, nicht eingehängt
 
 # Aufräumen
 docker container stop mein-webserver zweiter-webserver dritter-webserver
