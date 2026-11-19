@@ -1,7 +1,8 @@
 # Lösung · Container verwalten
 
-Drei Container aus demselben Image: einer leer, einer mit einer Seite **darin**,
-einer mit einer Seite, die **auf dem eigenen Rechner** liegt.
+Drei Container aus demselben Image: einer mit der Startseite von NGINX, einer
+mit der eigenen Seite **hineinkopiert**, einer mit derselben Seite
+**eingehängt** – sie bleibt auf dem eigenen Rechner.
 
 Zur Übung:
 [Einen Container aus einem fremden Image betreiben](https://atvantage-academy.github.io/training-material-container-technologies/docker-grundlagen/container-verwalten/issue.html)
@@ -43,29 +44,30 @@ docker container create --name zweiter-webserver -p 8081:80 nginx:1.27.5
 docker container start zweiter-webserver
 docker container ls
 
-# Die Seite entsteht IM zweiten Container
-docker container exec zweiter-webserver bash -c "echo 'Hallo Welt' > /usr/share/nginx/html/hallo.html"
+# Die eigene Seite entsteht auf dem Rechner ...
+mkdir website
+echo '<h1>Meine eigene Seite</h1>' > website/index.html
 
-curl http://localhost:8081/hallo.html   # 200 – die eigene Seite
-curl http://localhost:8080/hallo.html   # 404 – der erste kennt sie nicht
+# ... und wird IN den zweiten Container kopiert
+docker container cp website/index.html zweiter-webserver:/usr/share/nginx/html/index.html
+
+curl http://localhost:8081   # die eigene Seite
+curl http://localhost:8080   # weiterhin die Startseite von NGINX
 
 # Stoppen und starten: dieselbe Ausprägung, die Seite ist noch da
 docker container stop zweiter-webserver
 docker container start zweiter-webserver
-curl http://localhost:8081/hallo.html   # 200
+curl http://localhost:8081   # die eigene Seite
 
-# Der dritte Container: die Seite liegt auf dem Rechner und wird hineingereicht
-mkdir website
-echo '<h1>Diese Seite liegt auf meinem Rechner</h1>' > website/index.html
-
+# Der dritte Container: dieselbe Seite bleibt auf dem Rechner und wird eingehängt
 docker container create --name dritter-webserver -p 8082:80 \
   -v "$(pwd)/website":/usr/share/nginx/html nginx:1.27.5
 docker container start dritter-webserver
-curl http://localhost:8082
+curl http://localhost:8082   # die eigene Seite
 
 # Ändern – ohne den Container anzufassen
 echo '<h1>Geändert, ohne Neustart</h1>' > website/index.html
-curl http://localhost:8082                # sofort die neue Fassung
+curl http://localhost:8082   # sofort die neue Fassung
 
 # Aufräumen
 docker container stop mein-webserver zweiter-webserver dritter-webserver
@@ -88,7 +90,7 @@ außen unter 8081 zu erreichen ist – die Weitergabe macht der Host.
 ## Warum das VERZEICHNIS eingehängt wird und nicht die Datei
 
 Nachgemessen, nicht angenommen: Hängt man die einzelne Datei ein
-(`-v "$(pwd)/hallo.html":/usr/share/nginx/html/hallo.html`), liefert NGINX nach
+(`-v "$(pwd)/website/index.html":/usr/share/nginx/html/index.html`), liefert NGINX nach
 dem nächsten Speichern **404**. Viele Editoren schreiben beim Speichern eine neue
 Datei und benennen sie um; der Container hält aber die alte fest. Mit dem
 eingehängten **Verzeichnis** wirkt jede Änderung sofort – auch die aus einem
@@ -99,8 +101,9 @@ Editor.
 1. **Ohne `-p` keine Tür nach außen** – und nachträglich nicht zu ändern, weil
    die Weitergabe zur Erzeugung des Containers gehört. Dass der Server trotzdem
    läuft, zeigt der Aufruf von innen.
-2. **Was im Container entsteht, gehört nicht ins Image.** Der erste Container
-   liefert `hallo.html` nicht aus, obwohl beide aus derselben Vorlage kommen.
+2. **Was in einen Container kopiert wird, gehört nicht ins Image.** Der erste
+   Container liefert weiterhin die Startseite von NGINX, obwohl beide aus
+   derselben Vorlage kommen.
 3. **Was hineingereicht wird, liegt draußen** – und bleibt dort, wenn der
    Container weg ist. Das ist der Vorgriff auf „Konfiguration und Zustand“.
 
@@ -109,8 +112,8 @@ Editor.
 1. **Woran lag es, dass der erste Container nicht erreichbar war?** Es fehlte die
    Port-Weitergabe. Der Server lauschte im Container auf 80, aber nichts reichte
    eine Anfrage von außen hinein.
-2. **Warum liefert der erste Container `hallo.html` nicht aus?** Weil sie im
-   zweiten entstanden ist. Das Image ist der Bauplan und kennt die Datei nicht;
+2. **Warum liefert der erste Container nicht die eigene Seite aus?** Weil sie
+   nur in den zweiten kopiert wurde. Das Image ist der Bauplan und kennt die Datei nicht;
    jeder Container bekommt beim Erzeugen seinen eigenen beschreibbaren Bereich.
    Nach `stop`/`start` ist sie noch da – es ist derselbe Container. Beim Löschen
    und Neuerzeugen wäre sie weg.
@@ -140,9 +143,9 @@ Editor.
 
 ### [`website/index.html`](website/index.html)
 
-Die Seite, die der dritte Container ausliefert – sie liegt auf dem Rechner, nicht
-im Image.
+Die eigene Seite – der zweite Container bekommt sie hineinkopiert, der dritte
+eingehängt. Sie liegt auf dem Rechner, nicht im Image.
 
 ```html
-<h1>Diese Seite liegt auf meinem Rechner</h1>
+<h1>Meine eigene Seite</h1>
 ```
