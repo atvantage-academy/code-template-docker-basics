@@ -44,7 +44,7 @@ Namen vergibt und `--rm` weglässt, bekommt beim zweiten Lauf
 ```bash
 # Abhängigkeiten installieren und starten – beides im selben Lauf,
 # weil der Container mit --rm nach dem Ende verschwindet
-docker container run --rm -p 8080:8080 -v "$(pwd)":/app -w /app python:3.12-slim \
+docker container run --rm -p 8080:8080 -v "$(pwd)":/app -w /app python:3-slim \
   sh -c "pip install -r requirements.txt && python app.py"
 
 curl http://localhost:8080
