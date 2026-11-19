@@ -17,13 +17,13 @@ das Skript als Befehl übergeben:
 # MSYS_NO_PATHCONV=1 voranstellen – sonst baut die Shell den Pfad im Container
 # zu einem Windows-Pfad um:  MSYS_NO_PATHCONV=1 docker container run ...
 
-docker container run --rm -v "$(pwd)":/app python:3.12-slim python /app/hello.py
+docker container run --rm -v "$(pwd)":/app python:3-slim python /app/hello.py
 ```
 
 Ebenso richtig – die Datei in einen laufenden Container kopieren:
 
 ```bash
-docker container run -d --name py python:3.12-slim sleep 300
+docker container run -d --name py python:3-slim sleep 300
 docker container cp hello.py py:/hello.py
 docker container exec py python /hello.py
 docker container stop py && docker container rm py
