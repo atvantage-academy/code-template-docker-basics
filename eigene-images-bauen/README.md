@@ -94,11 +94,22 @@ sind die *dangling images*.
    lausche ich.“ Wer das Image bekommt, muss nicht raten, welchen Port er
    veröffentlichen soll. Veröffentlicht wird er damit nicht – das entscheidet
    `-p` beim Erzeugen des Containers.
-4. **`ENTRYPOINT`, `CMD`, `RUN`?** `RUN` läuft **beim Bauen** und verändert das
+4. **Warum ist `EXPOSE 80` eigentlich überflüssig?** Das Basisimage `nginx`
+   bringt `EXPOSE 80` schon mit, und ein abgeleitetes Image **erbt** diese
+   Angabe – mit und ohne die Zeile ist das Ergebnis dasselbe:
+
+   ```bash
+   docker image inspect nginx:1.27.5
+   ```
+
+   Unter `ExposedPorts` steht `80/tcp`, beim eigenen Image ebenso. Lohnen tut sich die
+   Zeile trotzdem: Sie dokumentiert den Port **im eigenen Dockerfile**, und wer
+   es liest, muss nicht erst im Basisimage nachsehen.
+5. **`ENTRYPOINT`, `CMD`, `RUN`?** `RUN` läuft **beim Bauen** und verändert das
    Image – alles, was es anlegt, steckt danach darin. `ENTRYPOINT` ist das
    Programm, das **beim Starten** läuft. `CMD` liefert dessen Standardargumente
    und wird von dem überschrieben, was hinter dem Imagenamen steht.
-5. **Wofür `HEALTHCHECK`?** Das Image sagt selbst, woran man erkennt, dass es
+6. **Wofür `HEALTHCHECK`?** Das Image sagt selbst, woran man erkennt, dass es
    arbeitet. Docker zeigt den Zustand an, eine Plattform kann daraufhin neu
    starten oder Verkehr umleiten. „Der Prozess läuft“ reicht als Aussage nicht:
    Ein Prozess kann leben und trotzdem keine Anfrage mehr beantworten – genau
