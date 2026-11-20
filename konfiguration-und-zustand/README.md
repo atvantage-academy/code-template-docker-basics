@@ -121,6 +121,36 @@ ein, was fehlt.
 Betriebsplattform legt diese Datei ohnehin nicht der Mensch an, sondern die
 Secrets-Verwaltung der Plattform.
 
+## Optional: in das Volume hineinsehen
+
+Ein Volume hat keinen Pfad, den man auf dem eigenen Rechner öffnen könnte. Es
+lässt sich aber in **jeden** Container einhängen – also in einen Wegwerf-Container
+mit einem kleinen Image, der mit `--rm` danach wieder verschwindet. `busybox`
+bringt `ls`, `find`, `cat` und `vi` mit:
+
+```bash
+# Inhalt der obersten Ebene ansehen
+docker container run --rm -v kurs-daten:/data busybox ls -la /data
+
+# Alle Dateien und Ordner im Volume auflisten
+docker container run --rm -v kurs-daten:/data busybox find /data
+
+# Eine Datei von Postgres anzeigen – die Version des Datenverzeichnisses
+docker container run --rm -v kurs-daten:/data busybox cat /data/pgdata/PG_VERSION
+
+# Interaktiv hineinsehen und ändern (vi ist dabei, nano nicht)
+docker container run --rm -it -v kurs-daten:/data busybox sh
+```
+
+Das Unterverzeichnis `pgdata/` stammt aus `PGDATA` – ein Beleg, dass die
+Variable gewirkt hat. `pgdata/postgresql.conf` ist eine gut lesbare Datei zum
+Zeigen.
+
+**Ändern nur bei gestopptem `meine-db`.** Zwei Container auf demselben Volume
+sehen dieselben Dateien, und eine Datenbank verträgt keine Änderung unter ihren
+Füßen. Die Dateien gehören dem Benutzer `postgres` im Image (UID 999); `busybox`
+läuft als `root` und darf daher alles – auch alles kaputt machen.
+
 ## Worauf es in der Nachbesprechung ankommt
 
 1. **Nichts davon hat das Image angefasst.** Dasselbe Artefakt, vier verschiedene
